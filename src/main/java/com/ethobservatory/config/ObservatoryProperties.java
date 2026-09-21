@@ -20,7 +20,7 @@ public class ObservatoryProperties {
     private int maxBlocks = 100;
 
     @Min(1)
-    private int maxGraphNodes = 100;
+    private int maxGraphNodes = 250;
 
     @Min(1)
     private int maxGraphEdges = 300;
