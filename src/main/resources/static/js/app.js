@@ -84,14 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const nodes = graph.nodes || [];
         const edges = graph.edges || [];
         const width = 760;
-        const height = 360;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const radiusX = 285;
-        const radiusY = 125;
+        const columns = 10;
+        const rowHeight = 76;
+        const rows = Math.max(1, Math.ceil(nodes.length / columns));
+        const height = Math.max(360, rows * rowHeight + 40);
         const positions = new Map(nodes.map((node, index) => {
-            const angle = (Math.PI * 2 * index / Math.max(nodes.length, 1)) - Math.PI / 2;
-            return [node.id, { x: centerX + Math.cos(angle) * radiusX, y: centerY + Math.sin(angle) * radiusY }];
+            const column = index % columns;
+            const row = Math.floor(index / columns);
+            return [node.id, { x: 42 + column * ((width - 84) / (columns - 1)), y: 28 + row * rowHeight }];
         }));
         const visibleEdges = edges.filter(edge => positions.has(edge.source) && positions.has(edge.target)).slice(0, 80);
         const edgeMarkup = visibleEdges.map(edge => {
@@ -101,11 +101,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
         const nodeMarkup = nodes.map((node, index) => {
             const position = positions.get(node.id);
-            const radius = Math.min(20, 9 + Math.sqrt(Number(node.transactionCount || 1)) * 2);
+            const radius = Math.min(22, 8 + Math.sqrt(Number(node.transactionCount || 1)) * 2);
             const color = node.isRepeated ? '#db2777' : ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b'][index % 4];
-            return `<g class="graph-node"><circle cx="${position.x}" cy="${position.y}" r="${radius}" fill="${color}"/><text x="${position.x}" y="${position.y + radius + 15}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text></g>`;
+            return `<g class="graph-node" tabindex="0" role="button" data-node-id="${escapeHtml(node.id)}" aria-label="Inspect ${escapeHtml(node.id)}"><circle cx="${position.x}" cy="${position.y}" r="${radius}" fill="${color}"/><text x="${position.x}" y="${position.y + radius + 15}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text><title>${escapeHtml(node.id)}</title></g>`;
         }).join('');
-        elements.graphPanel.innerHTML = `<div class="graph-meta"><strong>${nodes.length} nodes</strong><span>${edges.length} connections</span><span>Block ${escapeHtml(graph.blockNumber ?? '--')}</span></div><svg class="graph-canvas" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs><filter id="graph-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="graph-edges">${edgeMarkup}</g><g filter="url(#graph-glow)">${nodeMarkup}</g></svg>`;
+        elements.graphPanel.innerHTML = `<div class="graph-meta"><strong>${nodes.length} nodes</strong><span>${edges.length} connections</span><span>Block ${escapeHtml(graph.blockNumber ?? '--')}</span></div><svg class="graph-canvas" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" aria-label="Transaction network graph"><defs><filter id="graph-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="graph-edges">${edgeMarkup}</g><g filter="url(#graph-glow)">${nodeMarkup}</g></svg><div class="graph-inspector" id="graph-inspector" aria-live="polite"><strong>Select a node</strong><span>Click a wallet or contract to inspect its activity.</span></div>`;
+        const nodeById = new Map(nodes.map(node => [node.id, node]));
+        const inspector = elements.graphPanel.querySelector('#graph-inspector');
+        const inspectNode = (nodeId) => {
+            const node = nodeById.get(nodeId);
+            if (!node || !inspector) return;
+            elements.graphPanel.querySelectorAll('.graph-node.is-selected').forEach(selected => selected.classList.remove('is-selected'));
+            const selected = elements.graphPanel.querySelector(`[data-node-id="${CSS.escape(nodeId)}"]`);
+            if (selected) selected.classList.add('is-selected');
+            inspector.innerHTML = `<strong>${escapeHtml(node.id)}</strong><span>${escapeHtml(node.transactionCount)} transactions · ${escapeHtml(node.sentCount)} sent · ${escapeHtml(node.receivedCount)} received</span><span>${node.isRepeated ? 'Repeated activity detected' : 'No repeated activity threshold reached'}</span>`;
+        };
+        elements.graphPanel.querySelectorAll('.graph-node').forEach(nodeElement => {
+            nodeElement.addEventListener('click', () => inspectNode(nodeElement.dataset.nodeId));
+            nodeElement.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    inspectNode(nodeElement.dataset.nodeId);
+                }
+            });
+        });
     }
 
     async function loadDashboard() {
