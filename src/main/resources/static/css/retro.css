@@ -699,7 +699,8 @@ tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.32); }
     width: 100%;
     min-height: 320px;
     border-radius: 24px;
-    background: rgba(244, 241, 250, 0.72);
+    min-height: 420px;
+    background: #07090d;
     box-shadow: var(--clay-pressed);
     cursor: grab;
     touch-action: none;
@@ -710,19 +711,22 @@ tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.32); }
 }
 
 .graph-edge {
-    stroke: rgba(124, 58, 237, 0.24);
+    stroke: rgba(89, 201, 255, 0.35);
     stroke-linecap: round;
 }
 
 .graph-node circle {
     stroke: rgba(255, 255, 255, 0.9);
-    stroke-width: 3;
+    stroke-width: 1.5;
 }
 
 .graph-node text {
-    fill: var(--muted);
+    fill: rgba(255, 255, 255, 0.78);
     font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
+    font-size: 9px;
+    paint-order: stroke;
+    stroke: #07090d;
+    stroke-width: 3px;
 }
 
 .graph-node {

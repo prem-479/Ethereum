@@ -84,26 +84,62 @@ document.addEventListener('DOMContentLoaded', () => {
         const nodes = graph.nodes || [];
         const edges = graph.edges || [];
         const width = 760;
-        const columns = 10;
-        const rowHeight = 76;
-        const rows = Math.max(1, Math.ceil(nodes.length / columns));
-        const height = Math.max(360, rows * rowHeight + 40);
+        const height = 520;
         const positions = new Map(nodes.map((node, index) => {
-            const column = index % columns;
-            const row = Math.floor(index / columns);
-            return [node.id, { x: 42 + column * ((width - 84) / (columns - 1)), y: 28 + row * rowHeight }];
+            const angle = index * 2.3999632297;
+            const radius = 55 + (index % 7) * 34;
+            return [node.id, { x: width / 2 + Math.cos(angle) * radius, y: height / 2 + Math.sin(angle) * radius * 0.7 }];
         }));
-        const visibleEdges = edges.filter(edge => positions.has(edge.source) && positions.has(edge.target)).slice(0, 80);
+        const links = edges.filter(edge => positions.has(edge.source) && positions.has(edge.target));
+        for (let iteration = 0; iteration < 90; iteration += 1) {
+            const forces = new Map(nodes.map(node => [node.id, { x: 0, y: 0 }]));
+            nodes.forEach((left, leftIndex) => {
+                nodes.slice(leftIndex + 1).forEach(right => {
+                    const leftPosition = positions.get(left.id);
+                    const rightPosition = positions.get(right.id);
+                    const dx = rightPosition.x - leftPosition.x;
+                    const dy = rightPosition.y - leftPosition.y;
+                    const distance = Math.max(18, Math.sqrt(dx * dx + dy * dy));
+                    const force = 900 / (distance * distance);
+                    const fx = (dx / distance) * force;
+                    const fy = (dy / distance) * force;
+                    forces.get(left.id).x -= fx;
+                    forces.get(left.id).y -= fy;
+                    forces.get(right.id).x += fx;
+                    forces.get(right.id).y += fy;
+                });
+            });
+            links.forEach(edge => {
+                const source = positions.get(edge.source);
+                const target = positions.get(edge.target);
+                const dx = target.x - source.x;
+                const dy = target.y - source.y;
+                const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+                const force = Math.min(0.08, (distance - 92) * 0.0008);
+                forces.get(edge.source).x += (dx / distance) * force;
+                forces.get(edge.source).y += (dy / distance) * force;
+                forces.get(edge.target).x -= (dx / distance) * force;
+                forces.get(edge.target).y -= (dy / distance) * force;
+            });
+            nodes.forEach(node => {
+                const position = positions.get(node.id);
+                const force = forces.get(node.id);
+                position.x = Math.max(24, Math.min(width - 24, position.x + force.x));
+                position.y = Math.max(28, Math.min(height - 28, position.y + force.y));
+            });
+        }
+        const visibleEdges = links.slice(0, 220);
         const edgeMarkup = visibleEdges.map(edge => {
             const source = positions.get(edge.source);
             const target = positions.get(edge.target);
-            return `<line class="graph-edge" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke-width="${Math.min(5, 1 + Number(edge.transactionCount || 1))}" />`;
+            return `<line class="graph-edge" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke-width="${Math.min(3, 0.7 + Number(edge.transactionCount || 1) * 0.6)}" />`;
         }).join('');
         const nodeMarkup = nodes.map((node, index) => {
             const position = positions.get(node.id);
-            const radius = Math.min(22, 8 + Math.sqrt(Number(node.transactionCount || 1)) * 2);
-            const color = node.isRepeated ? '#db2777' : ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b'][index % 4];
-            return `<g class="graph-node" tabindex="0" role="button" data-node-id="${escapeHtml(node.id)}" aria-label="Inspect ${escapeHtml(node.id)}"><circle cx="${position.x}" cy="${position.y}" r="${radius}" fill="${color}"/><text x="${position.x}" y="${position.y + radius + 15}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text><title>${escapeHtml(node.id)}</title></g>`;
+            const radius = Math.min(30, 6 + Math.sqrt(Number(node.transactionCount || 1)) * 2.6);
+            const color = node.isRepeated ? '#ec198f' : ['#11c5a3', '#08a8f5', '#f5a900', '#8b42ff'][index % 4];
+            const label = index < 18 || node.transactionCount > 12 ? `<text x="${position.x}" y="${position.y + radius + 14}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text>` : '';
+            return `<g class="graph-node" tabindex="0" role="button" data-node-id="${escapeHtml(node.id)}" aria-label="Inspect ${escapeHtml(node.id)}"><circle cx="${position.x}" cy="${position.y}" r="${radius}" fill="${color}"/>${label}<title>${escapeHtml(node.id)}</title></g>`;
         }).join('');
         elements.graphPanel.innerHTML = `<div class="graph-meta"><strong>${nodes.length} nodes</strong><span>${edges.length} connections</span><span>Block ${escapeHtml(graph.blockNumber ?? '--')}</span></div><div class="graph-toolbar" role="toolbar" aria-label="Graph controls"><button type="button" class="graph-control" data-graph-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button><output class="graph-zoom-value" id="graph-zoom-value">100%</output><button type="button" class="graph-control" data-graph-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button><button type="button" class="graph-control graph-reset" data-graph-action="reset" title="Reset view" aria-label="Reset graph view">Reset</button><span class="graph-help">Scroll to zoom · drag empty space to pan</span></div><div class="graph-viewport"><svg class="graph-canvas" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" aria-label="Transaction network graph"><defs><filter id="graph-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="graph-world"><g class="graph-edges">${edgeMarkup}</g><g filter="url(#graph-glow)">${nodeMarkup}</g></g></svg></div><div class="graph-inspector" id="graph-inspector" aria-live="polite"><strong>Select a node</strong><span>Click a wallet or contract to inspect its activity.</span></div>`;
         const nodeById = new Map(nodes.map(node => [node.id, node]));
