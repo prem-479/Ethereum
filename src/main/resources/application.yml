@@ -1,0 +1,54 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:devdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: ${DATABASE_DRIVER_CLASS_NAME:org.h2.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:false}
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  mvc:
+    async:
+      request-timeout: 30000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: ${HEALTH_SHOW_DETAILS:never}
+
+ethereum:
+  rpc-url: ${ETH_RPC_URL:https://ethereum-rpc.publicnode.com}
+  ws-url: ${ETH_RPC_WS_URL:}
+  chain-id: 1
+  polling-interval-ms: ${ETH_POLLING_INTERVAL_MS:15000}
+  request-timeout-ms: ${ETH_RPC_TIMEOUT_MS:10000}
+  confirmations: ${ETH_CONFIRMATIONS:0}
+
+observatory:
+  history-block-count: ${HISTORY_BLOCK_COUNT:2}
+  max-transactions: ${MAX_TRANSACTIONS:5000}
+  max-blocks: ${MAX_BLOCKS:100}
+  max-graph-nodes: ${MAX_GRAPH_NODES:100}
+  max-graph-edges: ${MAX_GRAPH_EDGES:300}
+  repeated-threshold: ${REPEATED_THRESHOLD:2}
+  max-visible-transaction-rows: ${VISIBLE_TRANSACTION_ROWS:100}
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.hibernate: WARN
+    com.ethobservatory: INFO

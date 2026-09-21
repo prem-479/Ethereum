@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ETH TRANSPARENCY OBSERVATORY</title>
+    <link rel="stylesheet" th:href="@{/css/retro.css}"/>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<div class="page-shell">
+    <header class="title-bar">
+        <div class="title-bar-text">ETH TRANSPARENCY OBSERVATORY</div>
+        <div class="title-bar-controls">
+            <span>_</span>
+            <span>□</span>
+            <span>X</span>
+        </div>
+    </header>
+
+    <div class="marquee-wrap">
+        <div class="marquee">
+            <span>*** LIVE ETHEREUM MAINNET ***</span>
+            <span>*** BLOCKCHAIN OBSERVATORY ***</span>
+            <span>*** REAL-TIME TRANSACTION STREAM ***</span>
+        </div>
+    </div>
+
+    <main class="dashboard">
+        <section class="hero-panel">
+            <h1 class="rainbow-header">Blockchain is transparent. Identity isn't.</h1>
+            <div class="status-strip">
+                <span class="status-pill live">LIVE MAINNET DATA</span>
+                <span class="status-pill">ETHEREUM MAINNET</span>
+            </div>
+        </section>
+
+        <section class="construction-area">
+            <div class="construction-stripe">LIVE DATA STREAM</div>
+        </section>
+
+        <section class="stats-grid" id="stats-grid">
+            <article class="stat-card"><label>LATEST BLOCK</label><strong id="latest-block">--</strong></article>
+            <article class="stat-card"><label>TX OBSERVED</label><strong id="tx-observed">--</strong></article>
+            <article class="stat-card"><label>ETH VOLUME</label><strong id="eth-volume">--</strong></article>
+            <article class="stat-card"><label>ACTIVE WALLETS</label><strong id="active-wallets">--</strong></article>
+            <article class="stat-card"><label>REPEATED ENTITIES</label><strong id="repeated-entities">--</strong></article>
+            <article class="stat-card"><label>BASE GAS</label><strong id="base-gas">--</strong></article>
+            <article class="stat-card"><label>RPC LATENCY</label><strong id="rpc-latency">--</strong></article>
+            <article class="stat-card"><label>NETWORK STATUS</label><strong id="network-status">--</strong></article>
+        </section>
+
+        <section class="counter-panel">
+            <div class="counter-header">LIVE OBSERVATION COUNTER</div>
+            <div class="counter-grid">
+                <div class="counter-box"><span>TRANSACTIONS</span><strong id="counter-transactions">0000000</strong></div>
+                <div class="counter-box"><span>WALLETS</span><strong id="counter-wallets">0000000</strong></div>
+                <div class="counter-box"><span>BLOCKS</span><strong id="counter-blocks">0000000</strong></div>
+            </div>
+        </section>
+
+        <section class="panel-grid">
+            <div class="panel">
+                <div class="panel-title">LIVE TRANSACTION TABLE</div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>TIME</th>
+                        <th>FROM</th>
+                        <th>TO / CONTRACT</th>
+                        <th>VALUE</th>
+                        <th>GAS PRICE</th>
+                        <th>BLOCK</th>
+                        <th>TX HASH</th>
+                    </tr>
+                    </thead>
+                    <tbody id="transaction-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">REPEATED ACTIVITY</div>
+                <div id="repeated-activity-panel" class="list-panel"></div>
+            </div>
+        </section>
+
+        <section class="panel-grid single-column">
+            <div class="panel">
+                <div class="panel-title">TRANSACTION NETWORK GRAPH</div>
+                <div id="graph-panel" class="graph-panel" role="img" aria-label="Transaction network graph"></div>
+            </div>
+        </section>
+
+        <section class="panel summary-panel">
+            <div class="panel-title">EXPERIMENT OBSERVATION &amp; SUMMARY</div>
+            <p id="summary-text">Insufficient observations for a meaningful summary.</p>
+        </section>
+
+        <section class="panel full-width">
+            <div class="panel-title">SEARCH</div>
+            <div class="search-row">
+                <input id="search-input" type="text" aria-label="Search wallet, hash, or block number" placeholder="Search 0x..., block number, or address" />
+                <button type="button" id="search-button">SEARCH</button>
+            </div>
+        </section>
+
+        <section class="panel disclaimer-panel">
+            <div class="panel-title">PRIVACY / ACADEMIC DISCLAIMER</div>
+            <p>
+                This observatory analyzes publicly accessible Ethereum Mainnet transaction data. Wallet addresses are pseudonymous protocol identifiers.
+                Repeated activity and network relationships are behavioral observations and do not by themselves establish the real-world identity or common ownership of an address.
+            </p>
+        </section>
+    </main>
+</div>
+</body>
+</html>

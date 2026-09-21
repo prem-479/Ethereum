@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: eth_observatory
+      POSTGRES_USER: observatory
+      POSTGRES_PASSWORD: observatory
+    volumes:
+      - observatory-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U observatory -d eth_observatory"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/eth_observatory
+      DATABASE_USERNAME: observatory
+      DATABASE_PASSWORD: observatory
+      DATABASE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      ETH_RPC_URL: ${ETH_RPC_URL:-https://ethereum-rpc.publicnode.com}
+      ETH_RPC_WS_URL: ${ETH_RPC_WS_URL:-}
+    ports:
+      - "8080:8080"
+
+volumes:
+  observatory-db:
