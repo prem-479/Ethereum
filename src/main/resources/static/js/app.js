@@ -105,9 +105,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const color = node.isRepeated ? '#db2777' : ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b'][index % 4];
             return `<g class="graph-node" tabindex="0" role="button" data-node-id="${escapeHtml(node.id)}" aria-label="Inspect ${escapeHtml(node.id)}"><circle cx="${position.x}" cy="${position.y}" r="${radius}" fill="${color}"/><text x="${position.x}" y="${position.y + radius + 15}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text><title>${escapeHtml(node.id)}</title></g>`;
         }).join('');
-        elements.graphPanel.innerHTML = `<div class="graph-meta"><strong>${nodes.length} nodes</strong><span>${edges.length} connections</span><span>Block ${escapeHtml(graph.blockNumber ?? '--')}</span></div><svg class="graph-canvas" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" aria-label="Transaction network graph"><defs><filter id="graph-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="graph-edges">${edgeMarkup}</g><g filter="url(#graph-glow)">${nodeMarkup}</g></svg><div class="graph-inspector" id="graph-inspector" aria-live="polite"><strong>Select a node</strong><span>Click a wallet or contract to inspect its activity.</span></div>`;
+        elements.graphPanel.innerHTML = `<div class="graph-meta"><strong>${nodes.length} nodes</strong><span>${edges.length} connections</span><span>Block ${escapeHtml(graph.blockNumber ?? '--')}</span></div><div class="graph-toolbar" role="toolbar" aria-label="Graph controls"><button type="button" class="graph-control" data-graph-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button><output class="graph-zoom-value" id="graph-zoom-value">100%</output><button type="button" class="graph-control" data-graph-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button><button type="button" class="graph-control graph-reset" data-graph-action="reset" title="Reset view" aria-label="Reset graph view">Reset</button><span class="graph-help">Scroll to zoom · drag empty space to pan</span></div><div class="graph-viewport"><svg class="graph-canvas" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" aria-label="Transaction network graph"><defs><filter id="graph-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="graph-world"><g class="graph-edges">${edgeMarkup}</g><g filter="url(#graph-glow)">${nodeMarkup}</g></g></svg></div><div class="graph-inspector" id="graph-inspector" aria-live="polite"><strong>Select a node</strong><span>Click a wallet or contract to inspect its activity.</span></div>`;
         const nodeById = new Map(nodes.map(node => [node.id, node]));
         const inspector = elements.graphPanel.querySelector('#graph-inspector');
+        const world = elements.graphPanel.querySelector('.graph-world');
+        const zoomValue = elements.graphPanel.querySelector('#graph-zoom-value');
+        const view = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0 };
+        const applyView = () => {
+            world.setAttribute('transform', `translate(${view.x} ${view.y}) scale(${view.scale})`);
+            zoomValue.textContent = `${Math.round(view.scale * 100)}%`;
+        };
+        const changeZoom = (amount) => {
+            view.scale = Math.min(3, Math.max(0.65, view.scale + amount));
+            applyView();
+        };
         const inspectNode = (nodeId) => {
             const node = nodeById.get(nodeId);
             if (!node || !inspector) return;
@@ -125,6 +136,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+        elements.graphPanel.querySelectorAll('[data-graph-action]').forEach(control => {
+            control.addEventListener('click', () => {
+                const action = control.dataset.graphAction;
+                if (action === 'zoom-in') changeZoom(0.2);
+                if (action === 'zoom-out') changeZoom(-0.2);
+                if (action === 'reset') {
+                    view.scale = 1;
+                    view.x = 0;
+                    view.y = 0;
+                    applyView();
+                }
+            });
+        });
+        const svg = elements.graphPanel.querySelector('.graph-canvas');
+        svg.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            changeZoom(event.deltaY < 0 ? 0.1 : -0.1);
+        }, { passive: false });
+        svg.addEventListener('pointerdown', (event) => {
+            if (event.target.closest('.graph-node')) return;
+            view.dragging = true;
+            view.startX = event.clientX - view.x;
+            view.startY = event.clientY - view.y;
+            svg.setPointerCapture(event.pointerId);
+            svg.classList.add('is-panning');
+        });
+        svg.addEventListener('pointermove', (event) => {
+            if (!view.dragging) return;
+            view.x = event.clientX - view.startX;
+            view.y = event.clientY - view.startY;
+            applyView();
+        });
+        const stopPanning = (event) => {
+            if (!view.dragging) return;
+            view.dragging = false;
+            svg.releasePointerCapture?.(event.pointerId);
+            svg.classList.remove('is-panning');
+        };
+        svg.addEventListener('pointerup', stopPanning);
+        svg.addEventListener('pointercancel', stopPanning);
+        applyView();
     }
 
     async function loadDashboard() {
