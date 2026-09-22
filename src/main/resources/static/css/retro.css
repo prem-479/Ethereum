@@ -688,6 +688,28 @@ tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.32); }
     font-size: 0.7rem;
 }
 
+.graph-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin-right: 4px;
+    border-radius: 50%;
+}
+
+.legend-cool { background: #08a8f5; }
+.legend-hot { background: #f5a900; }
+.legend-repeat { background: #ec198f; }
+
 .graph-viewport {
     overflow: hidden;
     max-height: 620px;
@@ -722,7 +744,7 @@ tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.32); }
 .graph-node text {
     fill: rgba(255, 255, 255, 0.78);
     font-family: 'DM Sans', sans-serif;
-    font-size: 9px;
+    font-size: 8px;
     paint-order: stroke;
     stroke: #07090d;
     stroke-width: 3px;

@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("/api")
@@ -148,11 +149,13 @@ public class ApiController {
 
     @GetMapping("/graph")
     public Map<String, Object> graph() {
+        AtomicInteger nodeSequence = new AtomicInteger(1);
         List<Map<String, Object>> nodes = addressActivityRepository.findAll().stream()
                 .sorted((left, right) -> Integer.compare(right.getTransactionCount(), left.getTransactionCount()))
                 .limit(Math.max(5, Math.min(observatoryProperties.getMaxGraphNodes(), 500)))
                 .map(activity -> {
                     Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("shortCode", "N" + String.format("%03d", nodeSequence.getAndIncrement()));
                     item.put("id", activity.getAddress());
                     item.put("label", activity.getAddress());
                     item.put("transactionCount", activity.getTransactionCount());
