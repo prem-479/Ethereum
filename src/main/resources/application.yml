@@ -42,8 +42,8 @@ observatory:
   history-block-count: ${HISTORY_BLOCK_COUNT:2}
   max-transactions: ${MAX_TRANSACTIONS:5000}
   max-blocks: ${MAX_BLOCKS:100}
-  max-graph-nodes: ${MAX_GRAPH_NODES:250}
-  max-graph-edges: ${MAX_GRAPH_EDGES:300}
+  max-graph-nodes: ${MAX_GRAPH_NODES:500}
+  max-graph-edges: ${MAX_GRAPH_EDGES:800}
   repeated-threshold: ${REPEATED_THRESHOLD:2}
   max-visible-transaction-rows: ${VISIBLE_TRANSACTION_ROWS:100}
 

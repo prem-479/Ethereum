@@ -150,7 +150,7 @@ public class ApiController {
     public Map<String, Object> graph() {
         List<Map<String, Object>> nodes = addressActivityRepository.findAll().stream()
                 .sorted((left, right) -> Integer.compare(right.getTransactionCount(), left.getTransactionCount()))
-                .limit(Math.max(5, Math.min(observatoryProperties.getMaxGraphNodes(), 250)))
+                .limit(Math.max(5, Math.min(observatoryProperties.getMaxGraphNodes(), 500)))
                 .map(activity -> {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("id", activity.getAddress());

@@ -83,72 +83,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!graph || !elements.graphPanel) return;
         const nodes = graph.nodes || [];
         const edges = graph.edges || [];
-        const width = 760;
-        const height = 560;
+        const width = 900;
+        const height = 600;
         const maxTransactions = Math.max(1, ...nodes.map(node => Number(node.transactionCount || 1)));
-        const positions = new Map(nodes.map((node, index) => {
-            const angle = index * 2.3999632297;
-            const intensity = Number(node.transactionCount || 1) / maxTransactions;
-            const radius = 38 + (1 - intensity) * 210 + (index % 4) * 9;
-            return [node.id, { x: width / 2 + Math.cos(angle) * radius, y: height / 2 + Math.sin(angle) * radius * 0.78 }];
-        }));
-        const links = edges.filter(edge => positions.has(edge.source) && positions.has(edge.target));
-        for (let iteration = 0; iteration < 90; iteration += 1) {
-            const forces = new Map(nodes.map(node => [node.id, { x: 0, y: 0 }]));
-            nodes.forEach((left, leftIndex) => {
-                nodes.slice(leftIndex + 1).forEach(right => {
-                    const leftPosition = positions.get(left.id);
-                    const rightPosition = positions.get(right.id);
-                    const dx = rightPosition.x - leftPosition.x;
-                    const dy = rightPosition.y - leftPosition.y;
-                    const distance = Math.max(18, Math.sqrt(dx * dx + dy * dy));
-                    const force = 900 / (distance * distance);
-                    const fx = (dx / distance) * force;
-                    const fy = (dy / distance) * force;
-                    forces.get(left.id).x -= fx;
-                    forces.get(left.id).y -= fy;
-                    forces.get(right.id).x += fx;
-                    forces.get(right.id).y += fy;
-                });
-            });
-            links.forEach(edge => {
-                const source = positions.get(edge.source);
-                const target = positions.get(edge.target);
-                const dx = target.x - source.x;
-                const dy = target.y - source.y;
-                const distance = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-                const force = Math.min(0.08, (distance - 92) * 0.0008);
-                forces.get(edge.source).x += (dx / distance) * force;
-                forces.get(edge.source).y += (dy / distance) * force;
-                forces.get(edge.target).x -= (dx / distance) * force;
-                forces.get(edge.target).y -= (dy / distance) * force;
-            });
-            nodes.forEach(node => {
-                const position = positions.get(node.id);
-                const force = forces.get(node.id);
-                const centerPull = 0.004 + (Number(node.transactionCount || 1) / maxTransactions) * 0.012;
-                force.x += (width / 2 - position.x) * centerPull;
-                force.y += (height / 2 - position.y) * centerPull;
-                position.x = Math.max(24, Math.min(width - 24, position.x + force.x));
-                position.y = Math.max(28, Math.min(height - 28, position.y + force.y));
-            });
-        }
-        const bounds = nodes.reduce((current, node) => {
-            const point = positions.get(node.id);
-            return {
-                minX: Math.min(current.minX, point.x), maxX: Math.max(current.maxX, point.x),
-                minY: Math.min(current.minY, point.y), maxY: Math.max(current.maxY, point.y)
-            };
-        }, { minX: width, maxX: 0, minY: height, maxY: 0 });
-        const contentWidth = Math.max(1, bounds.maxX - bounds.minX);
-        const contentHeight = Math.max(1, bounds.maxY - bounds.minY);
-        const fitScale = Math.min((width - 56) / contentWidth, (height - 56) / contentHeight, 1.35);
-        nodes.forEach(node => {
-            const point = positions.get(node.id);
-            point.x = 28 + (point.x - bounds.minX) * fitScale;
-            point.y = 28 + (point.y - bounds.minY) * fitScale;
+        const hubCount = Math.min(8, Math.max(3, Math.ceil(nodes.length / 65)));
+        const hubPositions = nodes.slice(0, hubCount).map((node, index) => {
+            const angle = (Math.PI * 2 * index / hubCount) - Math.PI / 2;
+            return { id: node.id, x: width / 2 + Math.cos(angle) * 260, y: height / 2 + Math.sin(angle) * 205 };
         });
-        const visibleEdges = links.slice(0, 220);
+        const positions = new Map();
+        hubPositions.forEach(hub => positions.set(hub.id, { x: hub.x, y: hub.y }));
+        nodes.slice(hubCount).forEach((node, index) => {
+            const hub = hubPositions[index % hubPositions.length];
+            const clusterIndex = Math.floor(index / hubPositions.length);
+            const layer = Math.floor(clusterIndex / 12);
+            const slot = clusterIndex % 12;
+            const angle = (Math.PI * 2 * slot / 12) + (index % 3) * 0.08;
+            const radius = 42 + layer * 36 + (index % 4) * 4;
+            positions.set(node.id, {
+                x: Math.max(18, Math.min(width - 18, hub.x + Math.cos(angle) * radius)),
+                y: Math.max(18, Math.min(height - 18, hub.y + Math.sin(angle) * radius * 0.72))
+            });
+        });
+        const links = edges.filter(edge => positions.has(edge.source) && positions.has(edge.target));
+        const visibleEdges = links.slice(0, 800);
         const edgeMarkup = visibleEdges.map(edge => {
             const source = positions.get(edge.source);
             const target = positions.get(edge.target);
@@ -160,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const intensity = Math.log1p(Number(node.transactionCount || 1)) / Math.log1p(maxTransactions);
             const hue = node.isRepeated ? 325 : 178 - Math.round(intensity * 150);
             const color = `hsl(${hue} 88% ${52 - Math.round(intensity * 12)}%)`;
-            const label = index < 18 || node.transactionCount > 12 ? `<text x="${position.x}" y="${position.y + radius + 14}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text>` : '';
+            const label = index < hubCount || index < 16 ? `<text x="${position.x}" y="${position.y + radius + 14}" text-anchor="middle">${escapeHtml(node.id.slice(0, 8))}...</text>` : '';
             return `<g class="graph-node" tabindex="0" role="button" data-node-id="${escapeHtml(node.id)}" aria-label="Inspect ${escapeHtml(node.id)}"><circle cx="${position.x}" cy="${position.y}" r="${radius}" fill="${color}"/>${label}<title>${escapeHtml(node.id)}</title></g>`;
         }).join('');
         elements.graphPanel.innerHTML = `<div class="graph-meta"><strong>${nodes.length} nodes</strong><span>${edges.length} connections</span><span>Block ${escapeHtml(graph.blockNumber ?? '--')}</span></div><div class="graph-toolbar" role="toolbar" aria-label="Graph controls"><button type="button" class="graph-control" data-graph-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button><output class="graph-zoom-value" id="graph-zoom-value">100%</output><button type="button" class="graph-control" data-graph-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button><button type="button" class="graph-control graph-reset" data-graph-action="reset" title="Reset view" aria-label="Reset graph view">Reset</button><span class="graph-help">Scroll to zoom · drag empty space to pan</span></div><div class="graph-viewport"><svg class="graph-canvas" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMin meet" aria-label="Transaction network graph"><defs><filter id="graph-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="graph-world"><g class="graph-edges">${edgeMarkup}</g><g filter="url(#graph-glow)">${nodeMarkup}</g></g></svg></div><div class="graph-inspector" id="graph-inspector" aria-live="polite"><strong>Select a node</strong><span>Click a wallet or contract to inspect its activity.</span></div>`;
