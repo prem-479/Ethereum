@@ -734,6 +734,7 @@ tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.32); }
 .graph-edge {
     stroke: rgba(89, 201, 255, 0.35);
     stroke-linecap: round;
+    transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease;
 }
 
 .graph-node circle {
@@ -756,8 +757,13 @@ tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.32); }
 }
 
 .graph-node circle {
-    transition: stroke-width 180ms ease, filter 180ms ease;
+    transition: opacity 180ms ease, stroke-width 180ms ease, filter 180ms ease, r 180ms ease;
 }
+
+.graph-panel.has-selection .graph-node:not(.is-selected):not(.is-connected) { opacity: 0.16; }
+.graph-panel.has-selection .graph-edge:not(.is-connected) { opacity: 0.06; }
+.graph-node.is-connected circle { stroke: #22d3ee; stroke-width: 3; filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.6)); }
+.graph-edge.is-connected { stroke: #f5a900; stroke-width: 3.5; opacity: 1; filter: drop-shadow(0 0 3px rgba(245, 169, 0, 0.8)); }
 
 .graph-node:hover circle, .graph-node:focus circle, .graph-node.is-selected circle {
     stroke: var(--violet);

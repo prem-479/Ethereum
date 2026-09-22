@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const edgeMarkup = visibleEdges.map(edge => {
             const source = positions.get(edge.source);
             const target = positions.get(edge.target);
-            return `<line class="graph-edge" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke-width="${Math.min(3, 0.7 + Number(edge.transactionCount || 1) * 0.6)}" />`;
+            return `<line class="graph-edge" data-source="${escapeHtml(edge.source)}" data-target="${escapeHtml(edge.target)}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke-width="${Math.min(3, 0.7 + Number(edge.transactionCount || 1) * 0.6)}" />`;
         }).join('');
         const nodeMarkup = nodes.map((node, index) => {
             const position = positions.get(node.id);
@@ -141,9 +141,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const node = nodeById.get(nodeId);
             if (!node || !inspector) return;
             elements.graphPanel.querySelectorAll('.graph-node.is-selected').forEach(selected => selected.classList.remove('is-selected'));
+            elements.graphPanel.querySelectorAll('.graph-node.is-connected, .graph-edge.is-connected').forEach(connected => connected.classList.remove('is-connected'));
+            elements.graphPanel.classList.add('has-selection');
             const selected = elements.graphPanel.querySelector(`[data-node-id="${CSS.escape(nodeId)}"]`);
             if (selected) selected.classList.add('is-selected');
-            inspector.innerHTML = `<strong>${escapeHtml(node.shortCode || node.id)} · ${escapeHtml(node.id)}</strong><span>${escapeHtml(node.transactionCount)} transactions · ${escapeHtml(node.sentCount)} sent · ${escapeHtml(node.receivedCount)} received</span><span>${node.isRepeated ? 'Repeated activity detected' : 'No repeated activity threshold reached'}</span>`;
+            const connectedIds = new Set();
+            elements.graphPanel.querySelectorAll('.graph-edge').forEach(edge => {
+                if (edge.dataset.source === nodeId || edge.dataset.target === nodeId) {
+                    edge.classList.add('is-connected');
+                    connectedIds.add(edge.dataset.source);
+                    connectedIds.add(edge.dataset.target);
+                }
+            });
+            connectedIds.delete(nodeId);
+            connectedIds.forEach(connectedId => {
+                const connectedNode = elements.graphPanel.querySelector(`[data-node-id="${CSS.escape(connectedId)}"]`);
+                if (connectedNode) connectedNode.classList.add('is-connected');
+            });
+            inspector.innerHTML = `<strong>${escapeHtml(node.shortCode || node.id)} · ${escapeHtml(node.id)}</strong><span>${escapeHtml(node.transactionCount)} transactions · ${escapeHtml(node.sentCount)} sent · ${escapeHtml(node.receivedCount)} received</span><span>${connectedIds.size} connected nodes</span><span>${node.isRepeated ? 'Repeated activity detected' : 'No repeated activity threshold reached'}</span>`;
         };
         elements.graphPanel.querySelectorAll('.graph-node').forEach(nodeElement => {
             nodeElement.addEventListener('click', () => inspectNode(nodeElement.dataset.nodeId));
@@ -160,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (action === 'zoom-in') changeZoom(0.2);
                 if (action === 'zoom-out') changeZoom(-0.2);
                 if (action === 'reset') {
+                    elements.graphPanel.classList.remove('has-selection');
+                    elements.graphPanel.querySelectorAll('.graph-node.is-selected, .graph-node.is-connected, .graph-edge.is-connected').forEach(selected => selected.classList.remove('is-selected', 'is-connected'));
                     view.scale = 1;
                     view.x = 0;
                     view.y = 0;
